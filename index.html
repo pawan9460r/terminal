@@ -1,804 +1,218 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Terminal v3.0</title>
-    <style>
-        :root {
-            --primary: #00ffaa;
-            --secondary: #009977;
-            --bg: #0a0e12;
-            --card-bg: #121a21;
-            --text: #e0e0e0;
-            --error: #ff5555;
-            --warning: #ffaa00;
-            --success: #00ff88;
-            --glow: rgba(0, 255, 170, 0.1);
-        }
+  <meta charset="UTF-8">
+  <title>Secure Terminal v4.0</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: monospace;
+      background: #000;
+      color: #0f0;
+    }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Fira Code', 'Courier New', monospace;
-        }
+    /* Login */
+    #login {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      text-align: center;
+    }
+    #login input {
+      background: #111;
+      border: 1px solid #0f0;
+      color: #0f0;
+      padding: 8px;
+      margin: 6px;
+      width: 220px;
+    }
+    #login button {
+      background: #0f0;
+      color: #000;
+      border: none;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    #error {
+      color: red;
+      margin-top: 8px;
+      height: 20px;
+    }
 
-        body {
-            background-color: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-            overflow-x: hidden;
-            background-image:
-                radial-gradient(circle at 25% 25%, rgba(0, 255, 170, 0.05) 0%, transparent 50%),
-                radial-gradient(circle at 75% 75%, rgba(0, 150, 255, 0.05) 0%, transparent 50%);
-        }
-
-        /* Login Screen */
-        .login-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 2rem;
-            background-color: rgba(10, 14, 18, 0.9);
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 1000;
-        }
-
-        .login-box {
-            background: var(--card-bg);
-            border-radius: 8px;
-            padding: 2.5rem;
-            width: 100%;
-            max-width: 450px;
-            box-shadow: 0 0 30px rgba(0, 255, 170, 0.2);
-            border: 1px solid rgba(0, 255, 170, 0.1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .login-box::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(to bottom right,
-                    transparent 0%,
-                    transparent 50%,
-                    var(--primary) 50%,
-                    var(--primary) 100%);
-            transform: rotate(30deg);
-            opacity: 0.1;
-            animation: shine 6s infinite linear;
-        }
-
-        @keyframes shine {
-            0% {
-                transform: rotate(30deg) translate(-10%, -10%);
-            }
-
-            100% {
-                transform: rotate(30deg) translate(10%, 10%);
-            }
-        }
-
-        .login-title {
-            text-align: center;
-            margin-bottom: 2rem;
-            color: var(--primary);
-            font-size: 1.8rem;
-            font-weight: 500;
-            letter-spacing: 2px;
-        }
-
-        .input-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: var(--text);
-            font-size: 0.9rem;
-        }
-
-        .input-group input {
-            width: 100%;
-            padding: 0.8rem 1rem;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(0, 255, 170, 0.3);
-            border-radius: 4px;
-            color: var(--text);
-            font-size: 1rem;
-            transition: all 0.3s;
-        }
-
-        .input-group input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--glow);
-        }
-
-        .login-btn {
-            width: 100%;
-            padding: 0.8rem;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border: none;
-            border-radius: 4px;
-            color: #111;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-top: 1rem;
-        }
-
-        .login-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 255, 170, 0.3);
-        }
-
-        .error-message {
-            color: var(--error);
-            font-size: 0.9rem;
-            margin-top: 1rem;
-            text-align: center;
-            display: none;
-        }
-
-        /* Terminal Interface */
-        .terminal-container {
-            display: none;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        .terminal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(0, 255, 170, 0.2);
-        }
-
-        .terminal-title {
-            color: var(--primary);
-            font-size: 1.5rem;
-            font-weight: 500;
-        }
-
-        .terminal-social {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .social-link {
-            color: var(--text);
-            text-decoration: none;
-            font-size: 0.9rem;
-            transition: color 0.3s;
-        }
-
-        .social-link:hover {
-            color: var(--primary);
-        }
-
-        .terminal-body {
-            background: var(--card-bg);
-            border-radius: 8px;
-            padding: 1.5rem;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(0, 255, 170, 0.1);
-            min-height: 500px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .terminal-body::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--primary), transparent);
-            animation: scanline 3s linear infinite;
-        }
-
-        @keyframes scanline {
-            0% {
-                top: 0;
-            }
-
-            100% {
-                top: 100%;
-            }
-        }
-
-        .command-line {
-            display: flex;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-
-        .prompt {
-            color: var(--primary);
-            margin-right: 0.5rem;
-            white-space: nowrap;
-        }
-
-        .command-input {
-            flex-grow: 1;
-            background: transparent;
-            border: none;
-            color: var(--text);
-            font-size: 1rem;
-            padding: 0.5rem 0;
-            outline: none;
-            caret-color: var(--primary);
-        }
-
-        .terminal-output {
-            margin-top: 1rem;
-            max-height: 400px;
-            overflow-y: auto;
-            padding-right: 0.5rem;
-        }
-
-        .command-history {
-            color: var(--text);
-            opacity: 0.8;
-            margin-bottom: 0.5rem;
-        }
-
-        .command-response {
-            margin-bottom: 1.5rem;
-        }
-
-        .file-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-top: 1.5rem;
-        }
-
-        .file-item {
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(0, 255, 170, 0.1);
-            border-radius: 4px;
-            padding: 1rem;
-            transition: all 0.3s;
-            cursor: pointer;
-        }
-
-        .file-item:hover {
-            border-color: var(--primary);
-            background: rgba(0, 255, 170, 0.05);
-        }
-
-        .file-name {
-            font-weight: 500;
-            margin-bottom: 0.3rem;
-            word-break: break-all;
-        }
-
-        .file-meta {
-            font-size: 0.8rem;
-            color: rgba(224, 224, 224, 0.7);
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .status-message {
-            padding: 0.8rem;
-            border-radius: 4px;
-            margin-bottom: 1rem;
-            border-left: 3px solid var(--primary);
-            background: rgba(0, 255, 170, 0.05);
-        }
-
-        .status-error {
-            border-left-color: var(--error);
-            background: rgba(255, 85, 85, 0.05);
-        }
-
-        .status-warning {
-            border-left-color: var(--warning);
-            background: rgba(255, 170, 0, 0.05);
-        }
-
-        .status-success {
-            border-left-color: var(--success);
-            background: rgba(0, 255, 136, 0.05);
-        }
-
-        .download-progress {
-            height: 3px;
-            background: rgba(0, 255, 170, 0.1);
-            margin-top: 0.5rem;
-            border-radius: 2px;
-            overflow: hidden;
-        }
-
-        .progress-bar {
-            height: 100%;
-            width: 0%;
-            background: var(--primary);
-            transition: width 0.3s;
-        }
-
-        /* Animations */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes blink {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.5;
-            }
-        }
-
-        .blink {
-            animation: blink 1s infinite;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .login-box {
-                padding: 1.5rem;
-            }
-
-            .terminal-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 1rem;
-            }
-
-            .file-list {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    /* Terminal */
+    #terminal {
+      display: none;
+      height: 100vh;
+      padding: 10px;
+      box-sizing: border-box;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .line { margin: 2px 0; }
+    #input-line { display: flex; }
+    #prompt { margin-right: 5px; }
+    #commandInput {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #0f0;
+      font-family: monospace;
+    }
+    a {
+      color: #0ff;
+      text-decoration: none;
+    }
+    a:hover { text-decoration: underline; }
+  </style>
 </head>
-
 <body>
-    <!-- Login Screen -->
-    <div class="login-container" id="loginScreen">
-        <div class="login-box">
-            <h1 class="login-title">SECURE TERMINAL</h1>
-            <div class="input-group">
-                <label for="username">USERNAME</label>
-                <input type="text" id="username" placeholder="Enter your username">
-            </div>
-            <div class="input-group">
-                <label for="password">PASSWORD</label>
-                <input type="password" id="password" placeholder="Enter your password">
-            </div>
-            <button class="login-btn" id="loginBtn">AUTHENTICATE</button>
-            <div class="error-message" id="errorMessage">Invalid credentials. Please try again.</div>
-        </div>
+  <!-- Login Screen -->
+  <div id="login">
+    <h2>🔐 Secure Terminal Login</h2>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <div id="error"></div>
+  </div>
+
+  <!-- Terminal -->
+  <div id="terminal">
+    <div id="output"></div>
+    <div id="input-line">
+      <span id="prompt">guest@secure:~$</span>
+      <input type="text" id="commandInput" autofocus>
     </div>
+  </div>
 
-    <!-- Terminal Interface -->
-    <div class="terminal-container" id="terminal">
-        <div class="terminal-header">
-            <h1 class="terminal-title">SECURE TERMINAL v3.0</h1>
-            <div class="terminal-social">
-                <a href="https://github.com/pawan9460r" class="social-link" target="_blank">GitHub</a>
-                <a href="https://instagram.com/pawan.73719" class="social-link" target="_blank">Instagram</a>
-                <a href="https://youtube.com/@EpicXP-456" class="social-link" target="_blank">YouTube</a>
-            </div>
-        </div>
+  <script>
+    // Hardcoded credentials
+    const USERNAME = "Pawan";
+    const PASSWORD = "#kriti";
 
-        <div class="terminal-body">
-            <div class="command-line">
-                <span class="prompt">user@pawan:~$</span>
-                <input type="text" class="command-input" id="commandInput" placeholder="Type 'help' for commands"
-                    autofocus>
-            </div>
+    const loginBox = document.getElementById("login");
+    const terminal = document.getElementById("terminal");
+    const output = document.getElementById("output");
+    const cmdInput = document.getElementById("commandInput");
+    const errorMsg = document.getElementById("error");
 
-            <div class="terminal-output" id="terminalOutput">
-                <div class="command-response">
-                    <div class="status-message">
-                        Welcome to Secure Terminal v3.0<br>
-                        Type <strong>help</strong> to see available commands
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    // Fake data
+    const files = {
+      "about.txt": "This is Pawan's Secure Terminal Website.",
+      "ncert.pdf": "NCERT books are available. Type 'ncert' to open.",
+      "passwords.txt": "Instagram: pawan_9460 / pass: ********\nGmail: pawan.73719@gmail.com / pass: ********",
+      "bank.txt": "Bank Balance: ₹2,34,500\nLast Transaction: -₹2,000 (Shopping)"
+    };
 
-    <script>
-        // Login System
-        const loginScreen = document.getElementById('loginScreen');
-        const terminal = document.getElementById('terminal');
-        const loginBtn = document.getElementById('loginBtn');
-        const errorMessage = document.getElementById('errorMessage');
+    const ncertResources = {
+      maths: "📘 <a href='https://ncert.nic.in/textbook.php?lemh1=0-14' target='_blank'>Maths NCERT</a>",
+      science: "🔬 <a href='https://ncert.nic.in/textbook.php?lesc1=0-16' target='_blank'>Science NCERT</a>",
+      english: "📖 <a href='https://ncert.nic.in/textbook.php?leeh1=0-12' target='_blank'>English NCERT</a>",
+    };
 
-        // Correct credentials
-        const validCredentials = {
-            username: "Pawan",
-            password: "#kriti",
-            accessCode: "020310",
-            terminalId: "kriti"
-        };
+    const socials = {
+      instagram: "<a href='https://instagram.com' target='_blank'>Instagram</a>",
+      github: "<a href='https://github.com/pawan9460r' target='_blank'>GitHub</a>",
+      portfolio: "<a href='https://pawan9460r.github.io/Portfolio' target='_blank'>Portfolio</a>"
+    };
 
-        loginBtn.addEventListener('click', () => {
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+    function login() {
+      const user = document.getElementById("username").value.trim();
+      const pass = document.getElementById("password").value.trim();
+      if (user === USERNAME && pass === PASSWORD) {
+        loginBox.style.display = "none";
+        terminal.style.display = "block";
+        printLine("✅ Welcome, " + user + "! Type 'help' to see available commands.\n");
+      } else {
+        errorMsg.textContent = "❌ Invalid username or password!";
+      }
+    }
 
-            if (username === validCredentials.username && password === validCredentials.password) {
-                // Successful login
-                loginScreen.style.display = 'none';
-                terminal.style.display = 'block';
+    function printLine(text) {
+      const div = document.createElement("div");
+      div.className = "line";
+      div.innerHTML = text;
+      output.appendChild(div);
+      terminal.scrollTop = terminal.scrollHeight;
+    }
 
-                // Add welcome message
-                addToTerminal(`Welcome back, ${username}. Authentication successful.`, 'success');
-            } else {
-                // Failed login
-                errorMessage.style.display = 'block';
-                document.getElementById('password').value = '';
-            }
-        });
+    cmdInput.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        const command = cmdInput.value.trim();
+        printLine("<span style='color:#0ff'>guest@secure:~$</span> " + command);
+        runCommand(command);
+        cmdInput.value = "";
+      }
+    });
 
-        // Allow login on Enter key
-        document.getElementById('password').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                loginBtn.click();
-            }
-        });
+    // Handle commands
+    function runCommand(cmd) {
+      const parts = cmd.split(" ");
+      const base = parts[0].toLowerCase();
 
-        // Terminal System
-        const commandInput = document.getElementById('commandInput');
-        const terminalOutput = document.getElementById('terminalOutput');
-
-        // Sample files data
-        const files = [
-            {
-                name: "Owner's image.png",
-                type: "png",
-                size: "4.6 MB",
-                date: "2023-10-15",
-                link: "https://drive.google.com/uc?export=download&id=1gf5yyZEGLy-k7aSCuOJkb2gfsTNjNN7g"
-            },
-            
-            {
-                name: "chemistry book",
-                type: "pdf",
-                size: "37 MB",
-                date: "2025-8-12",
-                link: "https://drive.google.com/file/d/1g4OAB9tKm4EhFlIRJ7JW9BgVp1qmnb9A/view?usp=sharing"
-            },
-            {
-                name: "youtube",
-                type: "Website",
-                size: "",
-                date: "",
-                link: "https://youtube.com"
-            },
-            {
-                name: "instagram"
-                ,
-                type: "Website"
-                ,
-                size: ""
-                ,
-                date: ""
-                ,
-                link: "https://instagram.com"
-            },
-            {
-                name: "chatgpt",
-                type: "website",
-                size: "",
-                date: "",
-                link: "https://chatgpt.com"
-            },
-            { 
-                name: "deepseeker", 
-                type: "website",
-                size: "",
-                date: "",
-                link: "https://chat.deepseek.ai"
-            }, 
-            {
-                name: "youtube-channel",
-                type: "website",
-                link: "https://youtube.com/@EpicXP-456"
-            }, 
-		{
-		name: "hack.chat",
-		type: "website",
-		link: "https://hack.chat/?codexdream"
-		},
-            // {
-            //     name: "blueprint.png",
-            //     type: "png",
-            //     size: "1.2 MB",
-            //     date: "2023-09-28",
-            //     link: "https://drive.google.com/uc?export=download&id=FILE_ID_3"
-            // }
-
-        ];
-
-        // NCERT Resources
-        const ncertResources = {
-            // "maths": "https://ncert.nic.in/textbook.php?kemh1=1-14",
-            // "science": "https://ncert.nic.in/textbook.php?1-16",
-            // "english": "https://ncert.nic.in/textbook.php?1-13",
-            // "default": "https://ncert.nic.in/"
-        };
-
-        // Command processing
-        commandInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const command = commandInput.value.trim();
-                commandInput.value = '';
-
-                // Add command to history
-                addToTerminal(`user@pawan:~$ ${command}`, 'history');
-
-                // Process command
-                if (command === 'help') {
-                    showHelp();
-                }
-                else if (command === 'clear') {
-                    terminalOutput.innerHTML = '';
-                }
-                
-                else if (command === 'ls' || command === 'list') {
-                    listFiles();
-                }
-                else if (command.startsWith('open ')) {
-                    openFile(command.substring(5).trim());
-                }
-                else if (command === 'ncert' || command.startsWith('ncert ')) {
-                    openNcert(command.split(' ')[1]);
-                }
-                else if (command === 'date') {
-                    addToTerminal(`Current system date: ${new Date().toLocaleString()}`, 'info');
-                }
-                else if (command === 'whoami') {
-                    addToTerminal(`You are logged in as: ${validCredentials.username}`, 'info');
-                }
-                else if (command === 'hello') {  // <-- NEW HELLO COMMAND
-                    addToTerminal("AI> <span class='glow-text'>Hello User. Terminal is ready.</span>", 'success');
-                }
-                else if (command === 'what i can do with you') {
-                    addToTerminal("AI> <span class='glow-text'>You can download Notes, Photos, annomious chating, etc....  ")
-                }
-                else if (command === 'hack.chat') {
-                    addToTerminal("AI> <span class='glow-text'>using This command you can chat with us Annomious by using command - open hack.chat/?codexdream")
-                }
-                else if (command === 'chemistry') {
-                    addToTerminal("AI> <span class='glow-text'> Download Book - S chand chemistry Book - Use this Command 'open chemistry book'")
-                }
-                else if (command === 'about-owner')
-                {
-                    addToTerminal("AI> <span class='glow-text'> Some Information about the developer.... <br> Name: Pawan kumar <br> School: AY international school <br> class: 9th <br> Address: Bihar, Samastipur, Samastipur Sadar, khanpur, Shreepur Gahar Paschmi, kamopur, ward - 8 <br> Age: 15 Years")   
-                }
-                else if (command === 'exit') {
-                    addToTerminal("AI> <span class='glow-text'> Sorry, You cannot exit ")
-                }
-                else if (command === 'good job') {
-                    addToTerminal("AI> <span class='glow-text'> Thank you Sir... ")
-                }
-                else if (command === 'youtube') {
-                    addToTerminal("AI> <span class='glow-text'> To open YouTube, Use - open youtube ")
-                }
-                   else if (command === 'instagram') {
-                    addToTerminal("AI> <span class='glow-text'> To open Instagram use - open instagram ")
-                }
-                else if (command === 'commands') {
-                    addToTerminal("AI> <span class='glow-text'> Here are the commands: <br> - help <br> - open  hack.chat<br> - about <br> - clear <br> - open instagram <br> - open youtube <br> - open Owner's image.png <br> - download chemistry book <br> - exit <br> - hello <br> - youtube <br> - instagram <br> - instagram-accounts <br> - gmail-accounts <br> - bank balance <br> - about-owner ")
-                }
-                else if (command === 'history') {
-                    addToTerminal("AI> <span class='glow-text'> Sorry, We don't save history.....")
-                }
-                else if (command === 'instagram-accounts') {
-                    addToTerminal("AI> <span class='glow-text'> <br> Username:pawan.73719 <br> Password: #kritikumari <br> <br> Username: sweta_chy.1802 <br> Password: #swetachoudhary <br> <br> Username:pawan.79031 <br> Password: #swetachoudhary")
-                }
-                else if (command === 'gmail-accounts')
-                {
-                    addToTerminal("AI> <span class='glow-text'><br>Gmail: pawan.73719@gmail.com <br> Password: kriti kumari <br> <br> anil.kr96031@gmail.com <br> Password: 73719292am <br> <br> Gmail: pawan020310@gmail.com <br> Password: kriti kumari")
-                }
-                else if (command === 'account balance')
-                {
-                    addToTerminal("AI> <span class='glow-text'> Your Bank balance is 783 rupees. <br> Thank you ")
-                }
-    
-
-                else if (command === '') {
-                    // Do nothing for empty command
-                }
-                else {
-                    addToTerminal(`Command not found: ${command}<br>Type 'help' for available commands`, 'error');
-                }
-
-                // Scroll to bottom
-                terminalOutput.scrollTop = terminalOutput.scrollHeight;
-            }
-        });
-
-        // Helper functions
-        function addToTerminal(message, type = 'info') {
-            const div = document.createElement('div');
-            div.className = 'command-response';
-
-            let statusClass = 'status-message';
-            if (type === 'error') statusClass = 'status-error';
-            else if (type === 'warning') statusClass = 'status-warning';
-            else if (type === 'success') statusClass = 'status-success';
-            else if (type === 'history') statusClass = '';
-
-            if (type === 'history') {
-                div.innerHTML = `<div class="command-history">${message}</div>`;
-            } else {
-                div.innerHTML = `<div class="${statusClass}">${message}</div>`;
-            }
-
-            terminalOutput.appendChild(div);
-            return div;
-        }
-
-        function showHelp() {
-            const helpText = `
-                <strong>Available Commands:</strong><br><br>
-                <strong>help</strong> - Show this help message<br>
-                <strong>clear</strong> - Clear terminal screen<br>
-                <strong>ls/list</strong> - List available files<br>
-                <strong>open [filename]</strong> - Open/download a file<br>
-                <strong>ncert [subject]</strong> - Open NCERT resources (maths, science, english)<br>
-                <strong>date</strong> - Show current date and time<br>
-                <strong>whoami</strong> - Show current user<br><br>
-                <strong>Social Links:</strong><br>
-                - GitHub: github.com/pawan9460r<br>
-                - Instagram: @pawan.73719<br>
-                - YouTube: @EpicXP-456
-            `;
-            addToTerminal(helpText, 'info');
-        }
-
-        function listFiles() {
-            let filesText = `<strong>Available Files (${files.length}):</strong><br><br>`;
-            files.forEach(file => {
-                filesText += `<strong>${file.name}</strong> (${file.size})<br>`;
-            });
-
-            addToTerminal(filesText, 'info');
-        }
-
-        function openFile(filename) {
-            const file = files.find(f => f.name.toLowerCase() === filename.toLowerCase());
-
-            if (!file) {
-                addToTerminal(`File not found: ${filename}`, 'error');
-                return;
-            }
-
-            // File types that can be previewed
-            const previewableTypes = ["png", "jpg", "jpeg", "gif", "webp", "bmp"];
-
-            if (previewableTypes.includes(file.type)) {
-                addToTerminal(`Opening preview: ${file.name}`, 'success');
-                window.open(file.link, '_blank');
-            } else {
-                const message = addToTerminal(
-                    `<strong>SECURITY NOTICE:</strong> ${file.type.toUpperCase()} files cannot be previewed<br>
-                    Opening/Downloading: <strong>${file.name}</strong>`,
-                    'warning'
-                );
-
-                // Add progress bar
-                const progressDiv = document.createElement('div');
-                progressDiv.className = 'download-progress';
-                progressDiv.innerHTML = '<div class="progress-bar"></div>';
-                message.appendChild(progressDiv);
-
-                const progressBar = progressDiv.querySelector('.progress-bar');
-
-                // Simulate download progress
-                let progress = 0;
-                const interval = setInterval(() => {
-                    progress += Math.random() * 20;
-                    progressBar.style.width = `${Math.min(progress, 100)}%`;
-
-                    if (progress >= 100) {
-                        clearInterval(interval);
-                        setTimeout(() => {
-                            window.open(file.link, '_blank');
-                            addToTerminal(`Opening Item...: ${file.name}`, 'success');
-                        }, 300);
-                    }
-                }, 100);
-            }
-        }
-
-        function openNcert(subject) {
-            const resourceKey = subject ? subject.toLowerCase() : 'default';
-            const targetUrl = ncertResources[resourceKey] || ncertResources.default;
-
-            if (subject && !ncertResources[resourceKey]) {
-                addToTermnal(
-                    `NCERT subject not found: ${subject}<br>
-                    Available subjects: ${Object.keys(ncertResources).filter(k => k !== 'default').join(', ')}`,
-                    'warning'
-                );
-            }
-
-            addToTerminal(
-                subject
-                    ? `Opening NCERT ${resourceKey.toUpperCase()}...`
-                    : `Opening NCERT main portal...`,
-                'success'
-            );
-
-            setTimeout(() => {
-                window.open(targetUrl, '_blank');
-            }, 500);
-        }
-
-        // Initialize file list
-        function renderFileList() {
-            const fileList = document.createElement('div');
-            fileList.className = 'file-list';
-
-            files.forEach(file => {
-                const fileItem = document.createElement('div');
-                fileItem.className = 'file-item';
-                fileItem.innerHTML = `
-                    <div class="file-name">${file.name}</div>
-                    <div class="file-meta">
-                        <span>${file.size}</span>
-                        <span>${file.date}</span>
-                    </div>
-                `;
-
-                fileItem.addEventListener('click', () => {
-                    addToTerminal(`user@pawan:~$ open ${file.name}`, 'history');
-                    openFile(file.name);
-                });
-
-                fileList.appendChild(fileItem);
-            });-
-
-            return fileList;
-        }
-
-        // Add file list to terminal
-        function showFileList() {
-            const existingList = document.querySelector('.file-list');
-            if (existingList) existingList.remove();
-
-            const response = addToTermential('<strong>File System:</strong>', 'info');
-            response.appendChild(renderFileList());
-        }
-    </script>
-
+      switch(base) {
+        case "help":
+          printLine("Commands: help, clear, ls, cat <file>, whoami, date, ncert, social, bank, games, exit");
+          break;
+        case "clear":
+          output.innerHTML = "";
+          break;
+        case "ls":
+          printLine(Object.keys(files).join("   "));
+          break;
+        case "cat":
+          if (parts[1] && files[parts[1]]) {
+            printLine(files[parts[1]]);
+          } else {
+            printLine("File not found.");
+          }
+          break;
+        case "whoami":
+          printLine("User: Pawan Kumar (Class 9 Student, Coder & Hacker 😎)");
+          break;
+        case "date":
+          printLine(new Date().toString());
+          break;
+        case "ncert":
+          printLine("Available NCERT resources:");
+          for (let key in ncertResources) {
+            printLine("- " + ncertResources[key]);
+          }
+          break;
+        case "social":
+          printLine("🌐 Social Links:");
+          for (let key in socials) {
+            printLine("- " + socials[key]);
+          }
+          break;
+        case "bank":
+          printLine(files["bank.txt"]);
+          break;
+        case "games":
+          printLine("🎮 Available games:\n- snake\n- tictactoe\n(Type 'open snake' or 'open tictactoe')");
+          break;
+        case "open":
+          if (parts[1] === "snake") {
+            printLine("🐍 Snake game coming soon...");
+          } else if (parts[1] === "tictactoe") {
+            printLine("⭕❌ Tic Tac Toe game coming soon...");
+          } else {
+            printLine("Unknown item to open.");
+          }
+          break;
+        case "exit":
+          printLine("🔒 Logged out. Refresh to login again.");
+          cmdInput.disabled = true;
+          break;
+        case "":
+          break;
+        default:
+          printLine("❓ Unknown command: " + cmd + ". Type 'help' for list.");
+      }
+    }
+  </script>
 </body>
-
 </html>
